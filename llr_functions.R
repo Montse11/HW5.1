@@ -21,9 +21,13 @@ llr = function(x, y, z, omega) {
 #' @param omega (numeric) must be a scalar
 #' @return (numeric) scalar
 compute_f_hat = function(z, x, y, omega) {
-  Wz = make_weight_matrix(z, x, omega)
+  Wz = diag(make_weight_matrix(z, x, omega))
   X = make_predictor_matrix(x)
-  f_hat = c(1, z) %*% solve(t(X) %*% Wz %*% X) %*% t(X) %*% Wz %*% y
+  n = nrow(X)
+  A = t(sapply(1:n, function(i){
+    Wz[i]*X[i,]
+  }))
+  f_hat = c(1,z) %*% solve(t(X)%*% A) %*% t(X) %*% (Wz*y)
   return(f_hat)
 }
 
@@ -92,3 +96,8 @@ fits = llr(z = z, x = x, y = y, omega = pi / 3)
 # plot the data and the smoother
 plot(x, y)
 lines(z, fits, col = 'red')
+
+f_hat = c(1,z) %*% solve(t(X)%*% WzX) %*% t(X) %*% (Wz*y)
+fhat_means=t(apply(f_hat,2,mean))
+fhat_sds=t(apply(f_hat,2,sd))
+fhat_T=sweep(sweep(f_hat,2,fhat_means,"-"),2,fhat_sds,"/")*10+50
